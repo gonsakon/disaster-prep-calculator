@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>家庭防災物資試算小工具</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                sans-serif;
+            background: #f7f7fb;
+            color: #222;
+        }
+
+        .app {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 24px 16px 48px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            margin: 0 0 8px;
+        }
+
+        header p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+            margin-bottom: 16px;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .step-badge {
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            background: #2563eb;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .step-title {
+            font-weight: 600;
+        }
+
+        .field-group {
+            margin-bottom: 16px;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .field-help {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-size: 0.95rem;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 1px #2563eb33;
+        }
+
+        .people-count-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            max-width: 260px;
+        }
+
+        .inline-btn {
+            border: 1px solid #d1d5db;
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .inline-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .person-list {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 12px;
+        }
+
+        @media (min-width: 768px) {
+            .person-list {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        .person-card {
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            padding: 12px 12px 14px;
+            background: #f9fafb;
+        }
+
+        .person-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 999px;
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .radio-pill {
+            position: relative;
+        }
+
+        .radio-pill input {
+            opacity: 0;
+            position: absolute;
+            inset: 0;
+            cursor: pointer;
+        }
+
+        .radio-pill span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid #d1d5db;
+            font-size: 0.85rem;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.12s ease;
+        }
+
+        .radio-pill input:checked+span {
+            border-color: #2563eb;
+            background: #2563eb;
+            color: #fff;
+            box-shadow: 0 0 0 1px #2563eb33;
+        }
+
+        .actions-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border-radius: 999px;
+            padding: 8px 16px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: #374151;
+        }
+
+        .btn-ghost:hover {
+            background: #e5e7eb;
+        }
+
+        .error {
+            color: #b91c1c;
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Step 2 */
+        .summary-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .summary-chip {
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 12px;
+        }
+
+        thead {
+            background: #f3f4f6;
+        }
+
+        th,
+        td {
+            border: 1px solid #e5e7eb;
+            padding: 6px 8px;
+            vertical-align: top;
+        }
+
+        th {
+            text-align: left;
+            font-weight: 600;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .item-note {
+            color: #6b7280;
+            font-size: 0.78rem;
+        }
+
+        .footer-note {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <header>
+            <h1>家庭防災物資試算</h1>
+            <p>Step 1 填寫成員資料 → Step 2 查看建議備品清單（預設 7 天份）</p>
+        </header>
+
+        <!-- Step 1 -->
+        <section id="step-1" class="card">
+            <div class="step-header">
+                <span class="step-badge">1</span>
+                <div class="step-title">輸入家庭成員</div>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label">家裡共有幾個人？</label>
+                <div class="people-count-row">
+                    <button type="button" class="inline-btn" id="btn-minus">－</button>
+                    <input type="number" id="people-count" min="1" max="10" value="2" />
+                    <button type="button" class="inline-btn" id="btn-plus">＋</button>
+                </div>
+                <div class="field-help">範圍 1～10 人，包含自己在內。</div>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label">每個人的性別與世代</label>
+                <div class="field-help">
+                    世代定義：
+                    嬰幼兒 0–2、孩子 3–12、青少年 13–17、成人 18–64、長者 65+
+                </div>
+            </div>
+
+            <div id="person-list" class="person-list"></div>
+
+            <div id="step1-error" class="error hidden"></div>
+
+            <div class="actions-row">
+                <button type="button" class="btn btn-ghost" id="btn-reset">
+                    重設
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-next">
+                    下一步：計算建議備品
+                </button>
+            </div>
+        </section>
+
+        <!-- Step 2 -->
+        <section id="step-2" class="card hidden">
+            <div class="step-header">
+                <span class="step-badge">2</span>
+                <div class="step-title">建議備品清單</div>
+            </div>
+
+            <div id="summary" class="summary-row"></div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 26%">用品名稱</th>
+                        <th style="width: 10%">類別</th>
+                        <th style="width: 14%">單位</th>
+                        <th style="width: 14%" class="text-right">建議總量</th>
+                        <th>備註</th>
+                    </tr>
+                </thead>
+                <tbody id="result-body"></tbody>
+            </table>
+
+            <p class="footer-note">
+                ※ 本工具依「每人每天」或「每戶建議量」粗略估算，實際仍可依家庭習慣調整。
+            </p>
+
+            <div class="actions-row">
+                <button type="button" class="btn btn-ghost" id="btn-back">
+                    ← 回上一頁修改成員
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // === 設定：預設天數 ===
+        const DAYS = 7;
+
+        // === 單人／單日物資 JSON ===
+        /** scale:
+         * - per_person_per_day: 每人每天
+         * - per_person: 每人一次性
+         * - per_household: 每戶一次性
+         * - per_household_per_day: 每戶每天
+         */
+        const ITEMS = [
+            {
+                id: "water",
+                category: "食物",
+                name_zh: "飲用水",
+                unit: "公升",
+                scale: "per_person_per_day",
+                quantity: 3,
+                note: "原建議 2 人 7 天 42L → 每人每天約 3L"
+            },
+            {
+                id: "retort_rice",
+                category: "食物",
+                name_zh: "即食飯",
+                unit: "包",
+                scale: "per_person_per_day",
+                quantity: 3,
+                note: "42 包 ÷ (2×7) ≒ 3 包/人/天"
+            },
+            {
+                id: "retort_meals",
+                category: "食物",
+                name_zh: "即食料理包",
+                unit: "包",
+                scale: "per_person_per_day",
+                quantity: 1
+            },
+            {
+                id: "canned_food",
+                category: "食物",
+                name_zh: "罐頭（魚、蔬菜等）",
+                unit: "罐",
+                scale: "per_person_per_day",
+                quantity: 1
+            },
+            {
+                id: "vegetable_juice",
+                category: "食物",
+                name_zh: "蔬菜汁",
+                unit: "瓶",
+                scale: "per_person_per_day",
+                quantity: 1
+            },
+            {
+                id: "snacks",
+                category: "食物",
+                name_zh: "點心",
+                unit: "包",
+                scale: "per_person_per_day",
+                quantity: 0.5,
+                note: "可視家庭習慣上修"
+            },
+            {
+                id: "disinfecting_wet_wipes",
+                category: "衛生",
+                name_zh: "除菌濕紙巾",
+                unit: "張",
+                scale: "per_person_per_day",
+                quantity: 10,
+                note: "140 張 ÷ (2×7) = 10 張/人/天"
+            },
+            {
+                id: "tooth_wipes",
+                category: "衛生",
+                name_zh: "牙齒用濕紙巾",
+                unit: "張",
+                scale: "per_person_per_day",
+                quantity: 10
+            },
+            {
+                id: "body_wipes",
+                category: "衛生",
+                name_zh: "身體擦拭巾",
+                unit: "張",
+                scale: "per_person_per_day",
+                quantity: 1
+            },
+            {
+                id: "portable_toilets",
+                category: "衛生",
+                name_zh: "攜帶式／簡易廁所",
+                unit: "次",
+                scale: "per_person_per_day",
+                quantity: 5,
+                note: "70 次 ÷ (2×7) = 5 次/人/天"
+            },
+            {
+                id: "heat_packs",
+                category: "生活",
+                name_zh: "一次性暖暖包",
+                unit: "個",
+                scale: "per_person_per_day",
+                quantity: 2,
+                note: "28 個 ÷ (2×7) = 2 個/人/天"
+            },
+            {
+                id: "sanitary_products",
+                category: "女性用品",
+                name_zh: "生理用品（衛生棉等）",
+                unit: "片",
+                scale: "per_person_per_day",
+                quantity: 1,
+                applies_to: {
+                    sex: ["female"],
+                    age_groups: ["teen", "adult"]
+                },
+                note: "粗略換算 1 片/人/天，實務上可依週期與習慣調整。"
+            },
+            {
+                id: "basic_cosmetics",
+                category: "女性用品",
+                name_zh: "基礎保養品",
+                unit: "組",
+                scale: "per_person",
+                quantity: 1,
+                applies_to: {
+                    sex: ["female"],
+                    age_groups: ["teen", "adult", "senior"]
+                }
+            },
+            {
+                id: "toilet_paper",
+                category: "生活",
+                name_zh: "衛生紙（廁所用紙）",
+                unit: "捲",
+                scale: "per_person_per_day",
+                quantity: 0.36,
+                note: "5 捲 ÷ (2×7) ≒ 0.36 捲/人/天，可四捨五入。"
+            },
+            {
+                id: "tissues",
+                category: "生活",
+                name_zh: "面紙",
+                unit: "盒",
+                scale: "per_person_per_day",
+                quantity: 0.36
+            },
+            {
+                id: "cassette_stove",
+                category: "設備",
+                name_zh: "卡式瓦斯爐",
+                unit: "台",
+                scale: "per_household",
+                quantity: 1,
+                note: "通常 1 戶 1 台即可。"
+            },
+            {
+                id: "cassette_gas",
+                category: "設備",
+                name_zh: "卡式瓦斯罐",
+                unit: "罐",
+                scale: "per_household_per_day",
+                quantity: 1.333,
+                note: "原文：1 台爐 1 日約 4/3 罐。"
+            },
+            {
+                id: "led_lantern",
+                category: "設備",
+                name_zh: "LED 燈籠",
+                unit: "台",
+                scale: "per_household",
+                quantity: 3,
+                note: "建議每戶至少 3 台。"
+            },
+            {
+                id: "headlamp",
+                category: "設備",
+                name_zh: "頭燈",
+                unit: "個",
+                scale: "per_household",
+                quantity: 2
+            },
+            {
+                id: "radio",
+                category: "設備",
+                name_zh: "手搖充電收音機",
+                unit: "台",
+                scale: "per_household",
+                quantity: 1
+            }
+        ];
+
+        // === DOM 取得 ===
+        const peopleCountInput = document.getElementById("people-count");
+        const btnMinus = document.getElementById("btn-minus");
+        const btnPlus = document.getElementById("btn-plus");
+        const btnReset = document.getElementById("btn-reset");
+        const btnNext = document.getElementById("btn-next");
+        const btnBack = document.getElementById("btn-back");
+        const personList = document.getElementById("person-list");
+        const step1Error = document.getElementById("step1-error");
+        const step1 = document.getElementById("step-1");
+        const step2 = document.getElementById("step-2");
+        const summaryEl = document.getElementById("summary");
+        const resultBody = document.getElementById("result-body");
+
+        // === 工具函式 ===
+        const clamp = (value, min, max) =>
+            Math.min(max, Math.max(min, value));
+
+        function renderPersonCards(count) {
+            personList.innerHTML = "";
+            for (let i = 0; i < count; i++) {
+                const idx = i + 1;
+                const card = document.createElement("div");
+                card.className = "person-card";
+                card.dataset.index = idx.toString();
+
+                card.innerHTML = `
+          <div class="person-card-header">
+            <span>成員 ${idx}</span>
+            <span class="badge">一起同住</span>
+          </div>
+          <div class="field-group">
+            <span class="field-label">性別</span>
+            <div class="radio-group">
+              <label class="radio-pill">
+                <input type="radio" name="sex-${idx}" value="male" />
+                <span>男性</span>
+              </label>
+              <label class="radio-pill">
+                <input type="radio" name="sex-${idx}" value="female" />
+                <span>女性</span>
+              </label>
+              <label class="radio-pill">
+                <input type="radio" name="sex-${idx}" value="other" />
+                <span>其他 / 不方便回答</span>
+              </label>
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="age-${idx}">世代</label>
+            <select id="age-${idx}" name="age-${idx}">
+              <option value="">請選擇</option>
+              <option value="baby">嬰幼兒（0–2 歲）</option>
+              <option value="child">孩子（3–12 歲）</option>
+              <option value="teen">青少年（13–17 歲）</option>
+              <option value="adult">成人（18–64 歲）</option>
+              <option value="senior">長者（65+）</option>
+            </select>
+          </div>
+        `;
+                personList.appendChild(card);
+            }
+        }
+
+        function collectPeople() {
+            const cards = personList.querySelectorAll(".person-card");
+            const people = [];
+            for (const card of cards) {
+                const index = card.dataset.index;
+                const sexInput = card.querySelector(
+                    `input[name="sex-${index}"]:checked`
+                );
+                const ageSelect = card.querySelector(
+                    `select[name="age-${index}"]`
+                );
+                const sex = sexInput ? sexInput.value : "";
+                const ageGroup = ageSelect ? ageSelect.value : "";
+                if (!sex || !ageGroup) {
+                    return { ok: false, errorIndex: index, data: [] };
+                }
+                people.push({ sex, ageGroup });
+            }
+            return { ok: true, data: people };
+        }
+
+        function personMatches(item, person) {
+            const rules = item.applies_to;
+            if (!rules) return true;
+            let sexOk = true;
+            let ageOk = true;
+            if (rules.sex && rules.sex.length > 0) {
+                sexOk = rules.sex.includes(person.sex);
+            }
+            if (rules.age_groups && rules.age_groups.length > 0) {
+                ageOk = rules.age_groups.includes(person.ageGroup);
+            }
+            return sexOk && ageOk;
+        }
+
+        function calcTotalForItem(item, people) {
+            const countForItem = people.filter((p) =>
+                personMatches(item, p)
+            ).length;
+
+            if (countForItem === 0 && item.scale.startsWith("per_person")) {
+                return 0;
+            }
+
+            switch (item.scale) {
+                case "per_person_per_day":
+                    return item.quantity * countForItem * DAYS;
+                case "per_person":
+                    return item.quantity * countForItem;
+                case "per_household":
+                    return item.quantity;
+                case "per_household_per_day":
+                    return item.quantity * DAYS;
+                default:
+                    return 0;
+            }
+        }
+
+        function renderSummary(people) {
+            summaryEl.innerHTML = "";
+            const chip1 = document.createElement("div");
+            chip1.className = "summary-chip";
+            chip1.textContent = `成員數：${people.length} 人`;
+            summaryEl.appendChild(chip1);
+
+            const chip2 = document.createElement("div");
+            chip2.className = "summary-chip";
+            chip2.textContent = `預設天數：${DAYS} 天`;
+            summaryEl.appendChild(chip2);
+
+            // 顯示世代分布
+            const stats = { baby: 0, child: 0, teen: 0, adult: 0, senior: 0 };
+            for (const p of people) {
+                if (stats[p.ageGroup] != null) stats[p.ageGroup]++;
+            }
+            const labels = {
+                baby: "嬰幼兒",
+                child: "孩子",
+                teen: "青少年",
+                adult: "成人",
+                senior: "長者"
+            };
+            const parts = Object.entries(stats)
+                .filter(([, v]) => v > 0)
+                .map(([k, v]) => `${labels[k]} ${v} 人`);
+            if (parts.length) {
+                const chip3 = document.createElement("div");
+                chip3.className = "summary-chip";
+                chip3.textContent = parts.join("；");
+                summaryEl.appendChild(chip3);
+            }
+        }
+
+        function renderResults(people) {
+            resultBody.innerHTML = "";
+            ITEMS.forEach((item) => {
+                const total = calcTotalForItem(item, people);
+                if (total === 0) return;
+
+                const tr = document.createElement("tr");
+                const nameTd = document.createElement("td");
+                nameTd.textContent = item.name_zh;
+
+                const catTd = document.createElement("td");
+                catTd.textContent = item.category;
+
+                const unitTd = document.createElement("td");
+                unitTd.textContent = item.unit;
+
+                const qtyTd = document.createElement("td");
+                qtyTd.className = "text-right";
+                const display =
+                    Math.round(total * 100) % 100 === 0
+                        ? total.toString()
+                        : total.toFixed(1);
+                qtyTd.textContent = display;
+
+                const noteTd = document.createElement("td");
+                noteTd.className = "item-note";
+                noteTd.textContent = item.note || "";
+
+                tr.appendChild(nameTd);
+                tr.appendChild(catTd);
+                tr.appendChild(unitTd);
+                tr.appendChild(qtyTd);
+                tr.appendChild(noteTd);
+
+                resultBody.appendChild(tr);
+            });
+        }
+
+        // === 事件註冊 ===
+        btnMinus.addEventListener("click", () => {
+            const value = clamp(
+                Number(peopleCountInput.value || 1) - 1,
+                1,
+                10
+            );
+            peopleCountInput.value = value;
+            renderPersonCards(value);
+        });
+
+        btnPlus.addEventListener("click", () => {
+            const value = clamp(
+                Number(peopleCountInput.value || 1) + 1,
+                1,
+                10
+            );
+            peopleCountInput.value = value;
+            renderPersonCards(value);
+        });
+
+        peopleCountInput.addEventListener("change", () => {
+            const value = clamp(
+                Number(peopleCountInput.value || 1),
+                1,
+                10
+            );
+            peopleCountInput.value = value;
+            renderPersonCards(value);
+        });
+
+        btnReset.addEventListener("click", () => {
+            peopleCountInput.value = 2;
+            renderPersonCards(2);
+            step1Error.classList.add("hidden");
+            step1Error.textContent = "";
+        });
+
+        btnNext.addEventListener("click", () => {
+            const result = collectPeople();
+            if (!result.ok) {
+                step1Error.textContent =
+                    "請完整填寫每位成員的「性別」與「世代」。";
+                step1Error.classList.remove("hidden");
+                return;
+            }
+            step1Error.classList.add("hidden");
+            step1Error.textContent = "";
+
+            const people = result.data;
+            renderSummary(people);
+            renderResults(people);
+
+            step1.classList.add("hidden");
+            step2.classList.remove("hidden");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+
+        btnBack.addEventListener("click", () => {
+            step2.classList.add("hidden");
+            step1.classList.remove("hidden");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+
+        // 初始畫面
+        renderPersonCards(Number(peopleCountInput.value || 2));
+    </script>
+</body>
+
+</html>

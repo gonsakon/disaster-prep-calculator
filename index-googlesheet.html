@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>家庭防災物資試算小工具 (Google Sheet 版)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        /* === 原本的 CSS 樣式保持不變 === */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f7f7fb;
+            color: #222;
+        }
+
+        .app {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 24px 16px 48px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            margin: 0 0 8px;
+        }
+
+        header p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+            margin-bottom: 16px;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .step-badge {
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            background: #2563eb;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .step-title {
+            font-weight: 600;
+        }
+
+        .field-group {
+            margin-bottom: 16px;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .field-help {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-size: 0.95rem;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 1px #2563eb33;
+        }
+
+        .people-count-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            max-width: 260px;
+        }
+
+        .inline-btn {
+            border: 1px solid #d1d5db;
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .inline-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .person-list {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 12px;
+        }
+
+        @media (min-width: 768px) {
+            .person-list {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        .person-card {
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            padding: 12px 12px 14px;
+            background: #f9fafb;
+        }
+
+        .person-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 999px;
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .radio-pill {
+            position: relative;
+        }
+
+        .radio-pill input {
+            opacity: 0;
+            position: absolute;
+            inset: 0;
+            cursor: pointer;
+        }
+
+        .radio-pill span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid #d1d5db;
+            font-size: 0.85rem;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.12s ease;
+        }
+
+        .radio-pill input:checked+span {
+            border-color: #2563eb;
+            background: #2563eb;
+            color: #fff;
+            box-shadow: 0 0 0 1px #2563eb33;
+        }
+
+        .actions-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border-radius: 999px;
+            padding: 8px 16px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-primary:disabled {
+            background: #93c5fd;
+            cursor: not-allowed;
+        }
+
+        /* 新增禁用樣式 */
+        .btn-ghost {
+            background: transparent;
+            color: #374151;
+        }
+
+        .btn-ghost:hover {
+            background: #e5e7eb;
+        }
+
+        .error {
+            color: #b91c1c;
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .summary-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .summary-chip {
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 12px;
+        }
+
+        thead {
+            background: #f3f4f6;
+        }
+
+        th,
+        td {
+            border: 1px solid #e5e7eb;
+            padding: 6px 8px;
+            vertical-align: top;
+        }
+
+        th {
+            text-align: left;
+            font-weight: 600;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .item-note {
+            color: #6b7280;
+            font-size: 0.78rem;
+        }
+
+        .footer-note {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        /* 新增 Loading 狀態顯示 */
+        .loading-status {
+            font-size: 0.8rem;
+            color: #666;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <header>
+            <h1>家庭防災物資試算</h1>
+            <p>Google Sheet 連動版</p>
+        </header>
+
+        <section id="step-1" class="card">
+            <div class="step-header">
+                <span class="step-badge">1</span>
+                <div class="step-title">輸入家庭成員</div>
+                <span id="data-loading-status" class="loading-status">(正在讀取物資清單...)</span>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label">家裡共有幾個人？</label>
+                <div class="people-count-row">
+                    <button type="button" class="inline-btn" id="btn-minus">－</button>
+                    <input type="number" id="people-count" min="1" max="10" value="2" />
+                    <button type="button" class="inline-btn" id="btn-plus">＋</button>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label">每個人的性別與世代</label>
+                <div id="person-list" class="person-list"></div>
+            </div>
+
+            <div id="step1-error" class="error hidden"></div>
+
+            <div class="actions-row">
+                <button type="button" class="btn btn-ghost" id="btn-reset">重設</button>
+                <button type="button" class="btn btn-primary" id="btn-next" disabled>
+                    載入中...
+                </button>
+            </div>
+        </section>
+
+        <section id="step-2" class="card hidden">
+            <div class="step-header">
+                <span class="step-badge">2</span>
+                <div class="step-title">建議備品清單</div>
+            </div>
+            <div id="summary" class="summary-row"></div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 26%">用品名稱</th>
+                        <th style="width: 10%">類別</th>
+                        <th style="width: 14%">單位</th>
+                        <th style="width: 14%" class="text-right">建議總量</th>
+                        <th>備註</th>
+                    </tr>
+                </thead>
+                <tbody id="result-body"></tbody>
+            </table>
+            <p class="footer-note">※ 資料來源：Google Sheet 即時讀取，數量僅供參考。</p>
+            <div class="actions-row">
+                <button type="button" class="btn btn-ghost" id="btn-back">← 回上一頁修改成員</button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // ============================================================
+        // ★ 設定區：請將此網址換成您的 Google Sheet CSV 發布網址 ★
+        // ============================================================
+        const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRmMJRZQrhCZWckWWhdT9MSpi7RDh4bIzVm5mT8nwbJUE8nnneaar-jWNdRpY_x1mIQBmqRe7B46PNG/pub?output=csv";
+        // 注意：上面的網址是範例，請務必換成您自己的！
+
+        const DAYS = 7;
+        let ITEMS = []; // 用來存放從 Google Sheet 抓回來的資料
+
+        // === DOM 元素 ===
+        const peopleCountInput = document.getElementById("people-count");
+        const btnMinus = document.getElementById("btn-minus");
+        const btnPlus = document.getElementById("btn-plus");
+        const btnReset = document.getElementById("btn-reset");
+        const btnNext = document.getElementById("btn-next");
+        const btnBack = document.getElementById("btn-back");
+        const personList = document.getElementById("person-list");
+        const step1Error = document.getElementById("step1-error");
+        const step1 = document.getElementById("step-1");
+        const step2 = document.getElementById("step-2");
+        const summaryEl = document.getElementById("summary");
+        const resultBody = document.getElementById("result-body");
+        const loadingStatus = document.getElementById("data-loading-status");
+
+        // === 核心功能：讀取 Google Sheet ===
+        function initGoogleSheetData() {
+            // 使用 PapaParse 讀取遠端 CSV
+            Papa.parse(GOOGLE_SHEET_CSV_URL, {
+                download: true,
+                header: true, // 將第一列視為欄位名稱
+                skipEmptyLines: true,
+                complete: function (results) {
+                    // 解析成功
+                    console.log("CSV 下載成功:", results.data);
+                    ITEMS = transformCsvToItems(results.data);
+
+                    // 更新 UI 狀態
+                    btnNext.disabled = false;
+                    btnNext.textContent = "下一步：計算建議備品";
+                    loadingStatus.textContent = ""; // 清除載入中文字
+                    loadingStatus.style.color = "green";
+                },
+                error: function (err) {
+                    // 解析失敗
+                    console.error("CSV 讀取錯誤:", err);
+                    loadingStatus.textContent = "(資料讀取失敗，請檢查網址)";
+                    loadingStatus.style.color = "red";
+                    btnNext.textContent = "讀取失敗";
+                }
+            });
+        }
+
+        // 將 CSV 平面資料轉回程式需要的結構
+        function transformCsvToItems(csvData) {
+            return csvData.map(row => {
+                // 處理適用對象邏輯 (applies_to)
+                let applies_to = undefined;
+
+                // 檢查是否有填寫 limit_sex 或 limit_age
+                const hasSexLimit = row.limit_sex && row.limit_sex.trim() !== "";
+                const hasAgeLimit = row.limit_age && row.limit_age.trim() !== "";
+
+                if (hasSexLimit || hasAgeLimit) {
+                    applies_to = {};
+                    if (hasSexLimit) {
+                        // 支援逗號分隔，例如 "female, male"
+                        applies_to.sex = row.limit_sex.split(",").map(s => s.trim());
+                    }
+                    if (hasAgeLimit) {
+                        // 支援逗號分隔，例如 "baby, child"
+                        applies_to.age_groups = row.limit_age.split(",").map(s => s.trim());
+                    }
+                }
+
+                return {
+                    id: row.id,
+                    category: row.category,
+                    name_zh: row.name_zh,
+                    unit: row.unit,
+                    scale: row.scale, // 確保 Excel 裡的拼字跟程式邏輯一致 (per_person_per_day 等)
+                    quantity: parseFloat(row.quantity) || 0, // 轉為數字
+                    note: row.note,
+                    applies_to: applies_to
+                };
+            });
+        }
+
+        // === 以下為原本的 UI 邏輯 (幾乎未變動) ===
+
+        const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+        function renderPersonCards(count) {
+            personList.innerHTML = "";
+            for (let i = 0; i < count; i++) {
+                const idx = i + 1;
+                const card = document.createElement("div");
+                card.className = "person-card";
+                card.dataset.index = idx.toString();
+                card.innerHTML = `
+                    <div class="person-card-header">
+                        <span>成員 ${idx}</span>
+                        <span class="badge">一起同住</span>
+                    </div>
+                    <div class="field-group">
+                        <span class="field-label">性別</span>
+                        <div class="radio-group">
+                            <label class="radio-pill"><input type="radio" name="sex-${idx}" value="male"><span>男性</span></label>
+                            <label class="radio-pill"><input type="radio" name="sex-${idx}" value="female"><span>女性</span></label>
+                            <label class="radio-pill"><input type="radio" name="sex-${idx}" value="other"><span>其他</span></label>
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">世代</label>
+                        <select name="age-${idx}">
+                            <option value="">請選擇</option>
+                            <option value="baby">嬰幼兒（0–2 歲）</option>
+                            <option value="child">孩子（3–12 歲）</option>
+                            <option value="teen">青少年（13–17 歲）</option>
+                            <option value="adult">成人（18–64 歲）</option>
+                            <option value="senior">長者（65+）</option>
+                        </select>
+                    </div>`;
+                personList.appendChild(card);
+            }
+        }
+
+        function collectPeople() {
+            const cards = personList.querySelectorAll(".person-card");
+            const people = [];
+            for (const card of cards) {
+                const index = card.dataset.index;
+                const sexInput = card.querySelector(`input[name="sex-${index}"]:checked`);
+                const ageSelect = card.querySelector(`select[name="age-${index}"]`);
+
+                const sex = sexInput ? sexInput.value : "";
+                const ageGroup = ageSelect ? ageSelect.value : "";
+
+                if (!sex || !ageGroup) {
+                    return { ok: false, errorIndex: index, data: [] };
+                }
+                people.push({ sex, ageGroup });
+            }
+            return { ok: true, data: people };
+        }
+
+        function personMatches(item, person) {
+            const rules = item.applies_to;
+            if (!rules) return true; // 沒規則就代表適用所有人
+
+            let sexOk = true;
+            let ageOk = true;
+
+            // 檢查性別
+            if (rules.sex && rules.sex.length > 0) {
+                sexOk = rules.sex.includes(person.sex);
+            }
+            // 檢查年齡層
+            if (rules.age_groups && rules.age_groups.length > 0) {
+                ageOk = rules.age_groups.includes(person.ageGroup);
+            }
+            return sexOk && ageOk;
+        }
+
+        function calcTotalForItem(item, people) {
+            const countForItem = people.filter((p) => personMatches(item, p)).length;
+
+            if (countForItem === 0 && item.scale.startsWith("per_person")) {
+                return 0;
+            }
+
+            switch (item.scale) {
+                case "per_person_per_day": return item.quantity * countForItem * DAYS;
+                case "per_person": return item.quantity * countForItem;
+                case "per_household": return item.quantity;
+                case "per_household_per_day": return item.quantity * DAYS;
+                default: return 0;
+            }
+        }
+
+        function renderSummary(people) {
+            summaryEl.innerHTML = "";
+            const createChip = (text) => {
+                const d = document.createElement("div");
+                d.className = "summary-chip";
+                d.textContent = text;
+                summaryEl.appendChild(d);
+            };
+
+            createChip(`成員數：${people.length} 人`);
+            createChip(`預設天數：${DAYS} 天`);
+
+            // 統計世代
+            const stats = { baby: 0, child: 0, teen: 0, adult: 0, senior: 0 };
+            people.forEach(p => { if (stats[p.ageGroup] !== undefined) stats[p.ageGroup]++; });
+            const labels = { baby: "嬰幼兒", child: "孩子", teen: "青少年", adult: "成人", senior: "長者" };
+
+            const parts = Object.entries(stats)
+                .filter(([, v]) => v > 0)
+                .map(([k, v]) => `${labels[k]} ${v} 人`);
+
+            if (parts.length) createChip(parts.join("；"));
+        }
+
+        function renderResults(people) {
+            resultBody.innerHTML = "";
+
+            // 如果沒有資料，顯示提示
+            if (ITEMS.length === 0) {
+                resultBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">無法讀取資料，請檢查 Google Sheet 連結。</td></tr>`;
+                return;
+            }
+
+            ITEMS.forEach((item) => {
+                const total = calcTotalForItem(item, people);
+                if (total <= 0) return;
+
+                const tr = document.createElement("tr");
+                const displayQty = Math.round(total * 100) % 100 === 0 ? total.toString() : total.toFixed(1);
+
+                tr.innerHTML = `
+                    <td>${item.name_zh}</td>
+                    <td>${item.category}</td>
+                    <td>${item.unit}</td>
+                    <td class="text-right">${displayQty}</td>
+                    <td class="item-note">${item.note || ""}</td>
+                `;
+                resultBody.appendChild(tr);
+            });
+        }
+
+        // === 事件監聽 ===
+        const updatePeopleCount = (val) => {
+            const v = clamp(val, 1, 10);
+            peopleCountInput.value = v;
+            renderPersonCards(v);
+        };
+
+        btnMinus.addEventListener("click", () => updatePeopleCount(Number(peopleCountInput.value || 1) - 1));
+        btnPlus.addEventListener("click", () => updatePeopleCount(Number(peopleCountInput.value || 1) + 1));
+        peopleCountInput.addEventListener("change", () => updatePeopleCount(Number(peopleCountInput.value || 1)));
+
+        btnReset.addEventListener("click", () => {
+            updatePeopleCount(2);
+            step1Error.classList.add("hidden");
+        });
+
+        btnNext.addEventListener("click", () => {
+            const result = collectPeople();
+            if (!result.ok) {
+                step1Error.textContent = "請完整填寫每位成員的「性別」與「世代」。";
+                step1Error.classList.remove("hidden");
+                return;
+            }
+            step1Error.classList.add("hidden");
+
+            renderSummary(result.data);
+            renderResults(result.data);
+
+            step1.classList.add("hidden");
+            step2.classList.remove("hidden");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+
+        btnBack.addEventListener("click", () => {
+            step2.classList.add("hidden");
+            step1.classList.remove("hidden");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+
+        // === 初始化 ===
+        // 1. 繪製介面
+        renderPersonCards(Number(peopleCountInput.value || 2));
+        // 2. 抓取資料
+        initGoogleSheetData();
+
+    </script>
+</body>
+
+</html>
